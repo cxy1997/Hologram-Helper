@@ -1,0 +1,2 @@
+powershell -ExecutionPolicy ByPass -NoExit -Command "& 'D:\anaconda3\shell\condabin\conda-hook.ps1' ; conda activate 'D:\anaconda3' "
+conda init powershell

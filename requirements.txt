@@ -1,0 +1,5 @@
+pywinauto
+opencv-python
+numpy
+Pillow
+imageio
