@@ -1,25 +1,31 @@
 import numpy as np
 import win32api, win32con, win32gui
 import time
-
-
-crop_top = 72
-crop_bottom = 1029
-crop_left = 407
-crop_right = 1843
+from constants import *
 
 
 class Tracker(object):
-    def __init__(self, hwnd, pause, intersect=1.0, vanish=100):
-        self.left, self.top, self.right, self.bot = win32gui.GetWindowRect(hwnd)
-        self.pause = pause
+    def __init__(self, master, intersect=1.0, vanish=100):
+        self.master = master
+        self.left, self.top, self.right, self.bot = win32gui.GetWindowRect(self.master.hwnd)
         self.intersect = intersect
         self.vanish = vanish
         self.obj_id = 0
+        self.searching = True
 
     def update(self, new_objs):
         if new_objs is None:
             return
+        if self.master.has_started:
+            self.track(new_objs)
+        else:
+            self.gather(new_objs)
+
+    def track(self, new_objs):
+        pass
+
+        
+    def gather(self, new_objs):
         if hasattr(self, "xy"):
             self.freshness = self.freshness + 1
             dist = np.linalg.norm(self.xy.reshape((-1, 1, 2)) - new_objs[:, :2].reshape((1, -1, 2)), axis=2)
@@ -55,6 +61,7 @@ class Tracker(object):
             self.click_all()
 
     def click_all(self):
+        return
         if hasattr(self, "xy"):
             for i in range(self.xy.shape[0]):
                 self.double_click(i)
@@ -73,3 +80,18 @@ class Tracker(object):
             self.click()
             self.clicked[i] = 1
             win32api.SetCursorPos([x0, y0])
+
+    @property
+    def can_start(self):
+        threshold = self.threshold * 359 / 180.0
+        h, w = self.matrix_shape
+        return np.sum(self.r < threshold) >= h * w and np.sum(self.r > threshold) >= h * w
+
+    @property
+    def threshold(self):
+        return self.master.threshold
+    
+    @property
+    def matrix_shape(self):
+        return self.master.matrix_shape
+    
