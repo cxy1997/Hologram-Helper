@@ -29,17 +29,25 @@ class Interface(object):
         self.root = Tk()
         self.root.protocol('WM_DELETE_WINDOW', self.quitcallback)
         self.root.title("Auto Circle Clicker")
-        self.root.geometry("200x410")
+        self.root.geometry("200x650")
         self.root.iconbitmap("senpai.ico")
 
         # matrix selector
-        self.matrix_h_selector = Scale(self.root, label="Target matrix height:", font=('Arial', 12), from_=1, to=9, resolution=1, digits=1, orient=HORIZONTAL, length=190, width=45)
-        self.matrix_h_selector.set(3)
-        self.matrix_h_selector.pack()
+        self.matrix_l_h_selector = Scale(self.root, label="Left target matrix height:", font=('Arial', 12), from_=1, to=9, resolution=1, digits=1, orient=HORIZONTAL, length=190, width=45)
+        self.matrix_l_h_selector.set(3)
+        self.matrix_l_h_selector.pack()
 
-        self.matrix_w_selector = Scale(self.root, label="Target matrix width:", font=('Arial', 12), from_=1, to=9, resolution=1, digits=1, orient=HORIZONTAL, length=190, width=45)
-        self.matrix_w_selector.set(3)
-        self.matrix_w_selector.pack()
+        self.matrix_l_w_selector = Scale(self.root, label="Left target matrix width:", font=('Arial', 12), from_=1, to=9, resolution=1, digits=1, orient=HORIZONTAL, length=190, width=45)
+        self.matrix_l_w_selector.set(3)
+        self.matrix_l_w_selector.pack()
+
+        self.matrix_r_h_selector = Scale(self.root, label="Right target matrix height:", font=('Arial', 12), from_=1, to=9, resolution=1, digits=1, orient=HORIZONTAL, length=190, width=45)
+        self.matrix_r_h_selector.set(3)
+        self.matrix_r_h_selector.pack()
+
+        self.matrix_r_w_selector = Scale(self.root, label="Right target matrix width:", font=('Arial', 12), from_=1, to=9, resolution=1, digits=1, orient=HORIZONTAL, length=190, width=45)
+        self.matrix_r_w_selector.set(3)
+        self.matrix_r_w_selector.pack()
 
         # threshold selector
         self.threshold_selector = Scale(self.root, label="Split threshold:", font=('Arial', 12), from_=10, to=20, resolution=0.25, digits=4, orient=HORIZONTAL, length=190, width=45)
@@ -47,8 +55,7 @@ class Interface(object):
         self.threshold_selector.pack()
 
         # button selector
-        self.start_var = IntVar()
-        self.start_var.set(0)
+        self.has_started = False
         self.main_switch_text = StringVar()
         self.main_switch_text.set("Start")
         self.main_switch = Button(self.root, height=90, width=190, font=('Arial', 40), textvariable=self.main_switch_text, command=self.start)
@@ -64,7 +71,9 @@ class Interface(object):
         self.root.mainloop()
 
     def run(self):
+        print(self.has_started)
         if not self.has_started:
+            self.lh, self.lw, self.rh, self.rw = int(self.matrix_l_h_selector.get()), int(self.matrix_l_w_selector.get()), int(self.matrix_r_h_selector.get()), int(self.matrix_r_w_selector.get())
             self.update_target()
         img = cap(self.hwnd)
         circles = detect(img)
@@ -74,30 +83,23 @@ class Interface(object):
 
     def start(self):
         if not self.has_started:
-            if self.tracker.can_start:
-                self.main_switch_text.set("Started")
-                time.sleep(0.5)
-                self.tracker.click_all()
-                self.start_var.set(1)
-            else:
-                showwarning("Error", "Cannot find enough beads to form target matrix.")
+            self.main_switch_text.set("Started")
+            time.sleep(0.5)
+            self.tracker.start()
+            self.has_started = True
+            print("Setting true")
 
     def update_target(self, ratio=0.4):
         assert 0 < ratio < 0.5
         h = crop_bottom - crop_top
         w = crop_right - crop_left
-        mh, mw = self.matrix_shape
-        x, y = np.meshgrid(np.arange(1, mw+1) * w * ratio / (mw+1), np.arange(1, mh+1) * h / (mh+1))
-        x, y = x.reshape(-1, 1), y.reshape(-1, 1)
-        self.left_target = np.concatenate([x, y], axis=1)
-        self.right_target = np.concatenate([x + w * (1-ratio), y], axis=1)
+        x, y = np.meshgrid(np.arange(0.5, self.lw, 1) * w * ratio / self.lw, np.arange(0.5, self.lh, 1) * h / self.lh)
+        self.left_target = np.concatenate([x.reshape(-1, 1), y.reshape(-1, 1)], axis=1)
+        x, y = np.meshgrid(np.arange(0.5, self.rw, 1) * w * ratio / self.rw, np.arange(0.5, self.rh, 1) * h / self.rh)
+        self.right_target = np.concatenate([x.reshape(-1, 1) + w * (1-ratio), y.reshape(-1, 1)], axis=1)
 
     def quitcallback(self):
         self.root.destroy()
-
-    @property
-    def has_started(self):
-        return self.start_var.get() != 0
 
     @property
     def threshold(self):
@@ -105,7 +107,7 @@ class Interface(object):
 
     @property
     def matrix_shape(self):
-        return int(self.matrix_h_selector.get()), int(self.matrix_w_selector.get())
+        return self.lh, self.lw, self.rh, self.rw
 
 
 if __name__ == "__main__":
