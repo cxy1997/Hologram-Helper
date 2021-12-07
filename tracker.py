@@ -70,6 +70,8 @@ class Tracker(object):
             self.drag()
 
     def drag(self, attract=10, repel=10, step=5):
+        if self.master.pause:
+            return
         for i, j in enumerate(self.left_points):
             force = (self.master.left_target[i] - self.xy[j]) * attract
             for k in range(self.xy.shape[0]):
@@ -93,6 +95,7 @@ class Tracker(object):
         win32api.mouse_event(win32con.MOUSEEVENTF_MOVE, int(force[0]), int(force[1]), 0, 0)
         win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
         win32api.SetCursorPos([x0, y0])
+        self.master.root.focus_set()
 
     def start(self):
         if hasattr(self, "xy"):
@@ -112,6 +115,7 @@ class Tracker(object):
         self.click()
         # self.clicked[i] = 1
         win32api.SetCursorPos([x0, y0])
+        self.master.root.focus_set()
 
     @property
     def threshold(self):

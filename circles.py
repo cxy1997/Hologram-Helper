@@ -31,6 +31,7 @@ class Interface(object):
         self.root.title("Auto Circle Clicker")
         self.root.geometry("200x650")
         self.root.iconbitmap("senpai.ico")
+        self.root.bind('<Key-p>', self.pause)
 
         # matrix selector
         self.matrix_l_h_selector = Scale(self.root, label="Left target matrix height:", font=('Arial', 12), from_=1, to=9, resolution=1, digits=1, orient=HORIZONTAL, length=190, width=45)
@@ -56,6 +57,7 @@ class Interface(object):
 
         # button selector
         self.has_started = False
+        self.pause = False
         self.main_switch_text = StringVar()
         self.main_switch_text.set("Start")
         self.main_switch = Button(self.root, height=90, width=190, font=('Arial', 40), textvariable=self.main_switch_text, command=self.start)
@@ -69,6 +71,10 @@ class Interface(object):
 
         self.root.after(1, self.run)
         self.root.mainloop()
+
+    def pause(self):
+        self.pause = not self.pause
+        print(self.pause)
 
     def run(self):
         if not self.has_started:
