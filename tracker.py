@@ -92,7 +92,7 @@ class Tracker(object):
         win32api.SetCursorPos([int(self.xy[i, 0] + self.left + crop_left), int(self.xy[i, 1] + self.top + crop_top)])
         self.click()
         win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
-        win32api.mouse_event(win32con.MOUSEEVENTF_MOVE, int(force[0]), int(force[1]), 0, 0)
+        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN | win32con.MOUSEEVENTF_MOVE, int(force[0]), int(force[1]), 0, 0)
         win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
         win32api.SetCursorPos([x0, y0])
         self.master.root.focus_set()
