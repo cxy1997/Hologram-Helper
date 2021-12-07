@@ -57,7 +57,7 @@ class Interface(object):
 
         # button selector
         self.has_started = False
-        self.pause = False
+        self.pause = True
         self.main_switch_text = StringVar()
         self.main_switch_text.set("Start")
         self.main_switch = Button(self.root, height=90, width=190, font=('Arial', 40), textvariable=self.main_switch_text, command=self.start)
@@ -72,7 +72,7 @@ class Interface(object):
         self.root.after(1, self.run)
         self.root.mainloop()
 
-    def pause(self):
+    def pause(self, event):
         self.pause = not self.pause
         print(self.pause)
 

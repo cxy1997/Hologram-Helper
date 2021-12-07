@@ -24,8 +24,14 @@ class Visualizer(object):
                     cv2.circle(img, (int(self.master.tracker.xy[i, 0]), int(self.master.tracker.xy[i, 1])), int(self.master.tracker.r[i]), (40, 39, 214), 3)
                     cv2.circle(img, (int(self.master.tracker.xy[i, 0]), int(self.master.tracker.xy[i, 1])), 3, (40, 39, 214), -1)
             for i, j in enumerate(self.master.tracker.left_points):
-                cv2.arrowedLine(img, (int(self.master.tracker.xy[j, 0]), int(self.master.tracker.xy[j, 1])), (int(self.master.left_target[i, 0]), int(self.master.left_target[i, 1])), (14, 127, 255), 3, cv2.LINE_4)
+                cv2.arrowedLine(img, (int(self.master.tracker.xy[j, 0]), int(self.master.tracker.xy[j, 1])), (int(self.master.left_target[i, 0]), int(self.master.left_target[i, 1])), (14, 127, 255), 3)
             for i, j in enumerate(self.master.tracker.right_points):
-                cv2.arrowedLine(img, (int(self.master.tracker.xy[j, 0]), int(self.master.tracker.xy[j, 1])), (int(self.master.right_target[i, 0]), int(self.master.right_target[i, 1])), (40, 39, 214), 3, cv2.LINE_8)
+                cv2.arrowedLine(img, (int(self.master.tracker.xy[j, 0]), int(self.master.tracker.xy[j, 1])), (int(self.master.right_target[i, 0]), int(self.master.right_target[i, 1])), (40, 39, 214), 3)
+        if hasattr(self.master.tracker, "left_force"):
+            for i, j in enumerate(self.master.tracker.left_points):
+                cv2.arrowedLine(img, (int(self.master.tracker.xy[j, 0]), int(self.master.tracker.xy[j, 1])), (int(self.master.tracker.xy[j, 0] + self.master.tracker.left_force[i, 0]), int(self.master.tracker.xy[j, 1] + self.master.tracker.left_force[i, 1])), (0, 0, 0), 3)
+        if hasattr(self.master.tracker, "right_force"):
+            for i, j in enumerate(self.master.tracker.right_points):
+                cv2.arrowedLine(img, (int(self.master.tracker.xy[j, 0]), int(self.master.tracker.xy[j, 1])), (int(self.master.tracker.xy[j, 0] + self.master.tracker.right_force[i, 0]), int(self.master.tracker.xy[j, 1] + self.master.tracker.right_force[i, 1])), (0, 0, 0), 3)
         cv2.imshow("Auto clicker status", img)
         cv2.waitKey(1)

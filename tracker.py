@@ -69,25 +69,30 @@ class Tracker(object):
         else:
             self.drag()
 
-    def drag(self, attract=10, repel=10, step=5):
-        if self.master.pause:
-            return
+    def drag(self, attract=10, repel=10, step=15):
+        self.left_force = np.zeros((len(self.left_points), 2))
         for i, j in enumerate(self.left_points):
             force = (self.master.left_target[i] - self.xy[j]) * attract
             for k in range(self.xy.shape[0]):
                 if k != j:
                     force += repel / (np.linalg.norm(self.xy[k] - self.xy[j]) ** 2) * (self.xy[j] - self.xy[k])
             force = force / np.linalg.norm(force) * step
+            self.left_force[i] = force
             self.drag_point(j, force)
+            
+        self.right_force = np.zeros((len(self.right_points), 2))
         for i, j in enumerate(self.right_points):
             force = (self.master.right_target[i] - self.xy[j]) * attract
             for k in range(self.xy.shape[0]):
                 if k != j:
                     force += repel / (np.linalg.norm(self.xy[k] - self.xy[j]) ** 2) * (self.xy[j] - self.xy[k])
             force = force / np.linalg.norm(force) * step
+            self.right_force[i] = force
             self.drag_point(j, force)
 
     def drag_point(self, i, force):
+        if self.master.pause:
+            return
         x0, y0 = win32api.GetCursorPos()
         win32api.SetCursorPos([int(self.xy[i, 0] + self.left + crop_left), int(self.xy[i, 1] + self.top + crop_top)])
         self.click()
