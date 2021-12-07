@@ -66,6 +66,33 @@ class Tracker(object):
                     self.right_points.append(order[-i])
                 else:
                     break
+        else:
+            self.drag()
+
+    def drag(self, attract=10, repel=10, step=5):
+        for i, j in enumerate(self.left_points):
+            force = (self.master.left_target[i] - self.xy[j]) * attract
+            for k in range(self.xy.shape[0]):
+                if k != j:
+                    force += repel / (np.linalg.norm(self.xy[k] - self.xy[j]) ** 2) * (self.xy[j] - self.xy[k])
+            force = force / np.linalg.norm(force) * step
+            self.drag_point(j, force)
+        for i, j in enumerate(self.right_points):
+            force = (self.master.right_target[i] - self.xy[j]) * attract
+            for k in range(self.xy.shape[0]):
+                if k != j:
+                    force += repel / (np.linalg.norm(self.xy[k] - self.xy[j]) ** 2) * (self.xy[j] - self.xy[k])
+            force = force / np.linalg.norm(force) * step
+            self.drag_point(j, force)
+
+    def drag_point(self, i, force):
+        x0, y0 = win32api.GetCursorPos()
+        win32api.SetCursorPos([int(self.xy[i, 0] + self.left + crop_left), int(self.xy[i, 1] + self.top + crop_top)])
+        self.click()
+        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
+        win32api.mouse_event(win32con.MOUSEEVENTF_MOVE, int(force[0]), int(force[1]), 0, 0)
+        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
+        win32api.SetCursorPos([x0, y0])
 
     def start(self):
         if hasattr(self, "xy"):

@@ -71,7 +71,6 @@ class Interface(object):
         self.root.mainloop()
 
     def run(self):
-        print(self.has_started)
         if not self.has_started:
             self.lh, self.lw, self.rh, self.rw = int(self.matrix_l_h_selector.get()), int(self.matrix_l_w_selector.get()), int(self.matrix_r_h_selector.get()), int(self.matrix_r_w_selector.get())
             self.update_target()
