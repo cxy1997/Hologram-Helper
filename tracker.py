@@ -24,7 +24,6 @@ class Tracker(object):
     def track(self, new_objs):
         pass
 
-        
     def gather(self, new_objs):
         if hasattr(self, "xy"):
             self.freshness = self.freshness + 1
@@ -44,21 +43,21 @@ class Tracker(object):
             self.xy = np.concatenate([self.xy, added[:, :2]], axis=0)
             self.r = np.concatenate([self.r, added[:, 2]], axis=0)
             self.freshness = np.concatenate([self.freshness, np.zeros_like(added[:, 2]).astype(np.uint8)], axis=0)
-            self.clicked = np.concatenate([self.clicked, np.zeros_like(added[:, 2]).astype(np.uint8)], axis=0)
-            self.click_all()
+            # self.clicked = np.concatenate([self.clicked, np.zeros_like(added[:, 2]).astype(np.uint8)], axis=0)
+            # self.click_all()
 
             mask = self.freshness < self.vanish
             self.xy = self.xy[mask]
             self.r = self.r[mask]
             self.freshness = self.freshness[mask]
-            self.clicked = self.clicked[mask]
+            # self.clicked = self.clicked[mask]
         else:
             print(f"First Detection: {new_objs.shape[0]} circles")
             self.xy = new_objs[:, :2]
             self.r = new_objs[:, 2]
             self.freshness = np.zeros_like(new_objs[:, 2]).astype(np.uint8)
-            self.clicked = np.zeros_like(new_objs[:, 2]).astype(np.uint8)
-            self.click_all()
+            # self.clicked = np.zeros_like(new_objs[:, 2]).astype(np.uint8)
+            # self.click_all()
 
     def click_all(self):
         return
@@ -83,9 +82,10 @@ class Tracker(object):
 
     @property
     def can_start(self):
-        threshold = self.threshold * 359 / 180.0
+        if not hasattr(self, "xy"):
+            return False
         h, w = self.matrix_shape
-        return np.sum(self.r < threshold) >= h * w and np.sum(self.r > threshold) >= h * w
+        return np.sum(self.r < self.threshold) >= h * w and np.sum(self.r > self.threshold) >= h * w
 
     @property
     def threshold(self):

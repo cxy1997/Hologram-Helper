@@ -101,7 +101,7 @@ class Interface(object):
 
     @property
     def threshold(self):
-        return self.threshold_selector.get()
+        return self.threshold_selector.get() * 359 / 180.0
 
     @property
     def matrix_shape(self):
