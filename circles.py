@@ -18,12 +18,15 @@ from constants import *
 
 parser = argparse.ArgumentParser("Circle Clicker")
 parser.add_argument("--window", type=str, default="hot.vi", help="window name")
+parser.add_argument("--interval", type=int, default=10, help="drag interval")
 args = parser.parse_args()
 
 
 class Interface(object):
-    def __init__(self, hwnd):
+    def __init__(self, hwnd, drag_interval):
         self.hwnd = hwnd
+        self.time = 0
+        self.drag_interval = drag_interval
 
         # create window
         self.root = Tk()
@@ -77,6 +80,7 @@ class Interface(object):
         print(self.pause)
 
     def run(self):
+        self.time += 1
         if not self.has_started:
             self.lh, self.lw, self.rh, self.rw = int(self.matrix_l_h_selector.get()), int(self.matrix_l_w_selector.get()), int(self.matrix_r_h_selector.get()), int(self.matrix_r_w_selector.get())
             self.update_target()
@@ -124,4 +128,4 @@ if __name__ == "__main__":
         window_name = [x for x in window_names if args.window in x.lower()][0]
         print(f"Window name: {window_name}")
         hwnd = win32gui.FindWindow(None, window_name)
-        app = Interface(hwnd)
+        app = Interface(hwnd, args.interval)

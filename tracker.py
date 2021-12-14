@@ -66,7 +66,8 @@ class Tracker(object):
                 else:
                     break
         else:
-            self.drag()
+            if self.master.time % self.master.drag_interval == 0:
+                self.drag()
 
     def drag(self, attract=10, repel=10, step=15):
         self.left_force = np.zeros((len(self.left_points), 2))
