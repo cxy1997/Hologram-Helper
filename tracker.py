@@ -13,22 +13,22 @@ class Tracker(object):
         self.obj_id = 0
 
     def update(self, new_objs):
-        if new_objs is None:
-            return
-        if hasattr(self, "xy"):
-            self.freshness = self.freshness + 1
-            dist = np.linalg.norm(self.xy.reshape((-1, 1, 2)) - new_objs[:, :2].reshape((1, -1, 2)), axis=2)
-            added = []
-            for i in range(new_objs.shape[0]):
-                j = np.argmin(dist[:, i])
-                if dist[j, i] < self.intersect * (self.r[j] + new_objs[i, 2]):
-                    self.xy[j, :] = new_objs[i, :2]
-                    self.r[j] = new_objs[i, 2]
-                    self.freshness[j] = 0
-                else:
-                    added.append(i)
+        if not self.master.has_started:
+            if new_objs is None:
+                return
+            if hasattr(self, "xy"):
+                self.freshness = self.freshness + 1
+                dist = np.linalg.norm(self.xy.reshape((-1, 1, 2)) - new_objs[:, :2].reshape((1, -1, 2)), axis=2)
+                added = []
+                for i in range(new_objs.shape[0]):
+                    j = np.argmin(dist[:, i])
+                    if dist[j, i] < self.intersect * (self.r[j] + new_objs[i, 2]):
+                        self.xy[j, :] = new_objs[i, :2]
+                        self.r[j] = new_objs[i, 2]
+                        self.freshness[j] = 0
+                    else:
+                        added.append(i)
 
-            if not self.master.has_started:
                 added = new_objs[added, :]
                 print(f"New Detection: {added.shape[0]} circles")
 
@@ -43,15 +43,14 @@ class Tracker(object):
                 self.r = self.r[mask]
                 self.freshness = self.freshness[mask]
                 # self.clicked = self.clicked[mask]
-        else:
-            print(f"First Detection: {new_objs.shape[0]} circles")
-            self.xy = new_objs[:, :2]
-            self.r = new_objs[:, 2]
-            self.freshness = np.zeros_like(new_objs[:, 2]).astype(np.uint8)
-            # self.clicked = np.zeros_like(new_objs[:, 2]).astype(np.uint8)
-            # self.click_all()
+            else:
+                print(f"First Detection: {new_objs.shape[0]} circles")
+                self.xy = new_objs[:, :2]
+                self.r = new_objs[:, 2]
+                self.freshness = np.zeros_like(new_objs[:, 2]).astype(np.uint8)
+                # self.clicked = np.zeros_like(new_objs[:, 2]).astype(np.uint8)
+                # self.click_all()
 
-        if not self.master.has_started:
             order = np.argsort(self.r)
             lh, lw, rh, rw = self.matrix_shape
             self.left_points, self.right_points = [], []
@@ -79,7 +78,8 @@ class Tracker(object):
             force = force / np.linalg.norm(force) * step
             self.left_force[i] = force
             self.drag_point(j, force)
-            
+            self.xy[j] += force
+
         self.right_force = np.zeros((len(self.right_points), 2))
         for i, j in enumerate(self.right_points):
             force = (self.master.right_target[i] - self.xy[j]) * attract
@@ -89,6 +89,7 @@ class Tracker(object):
             force = force / np.linalg.norm(force) * step
             self.right_force[i] = force
             self.drag_point(j, force)
+            self.xy[j] += force
 
     def drag_point(self, i, force):
         if self.master.pause:
