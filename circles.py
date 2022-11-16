@@ -32,26 +32,9 @@ class Interface(object):
         self.root = Tk()
         self.root.protocol('WM_DELETE_WINDOW', self.quitcallback)
         self.root.title("Auto Circle Clicker")
-        self.root.geometry("200x650")
+        self.root.geometry("200x180")
         self.root.iconbitmap("senpai.ico")
-        self.root.bind('<Key-p>', self.pause)
-
-        # matrix selector
-        self.matrix_l_h_selector = Scale(self.root, label="Left target matrix height:", font=('Arial', 12), from_=1, to=9, resolution=1, digits=1, orient=HORIZONTAL, length=190, width=45)
-        self.matrix_l_h_selector.set(3)
-        self.matrix_l_h_selector.pack()
-
-        self.matrix_l_w_selector = Scale(self.root, label="Left target matrix width:", font=('Arial', 12), from_=1, to=9, resolution=1, digits=1, orient=HORIZONTAL, length=190, width=45)
-        self.matrix_l_w_selector.set(3)
-        self.matrix_l_w_selector.pack()
-
-        self.matrix_r_h_selector = Scale(self.root, label="Right target matrix height:", font=('Arial', 12), from_=1, to=9, resolution=1, digits=1, orient=HORIZONTAL, length=190, width=45)
-        self.matrix_r_h_selector.set(3)
-        self.matrix_r_h_selector.pack()
-
-        self.matrix_r_w_selector = Scale(self.root, label="Right target matrix width:", font=('Arial', 12), from_=1, to=9, resolution=1, digits=1, orient=HORIZONTAL, length=190, width=45)
-        self.matrix_r_w_selector.set(3)
-        self.matrix_r_w_selector.pack()
+        self.root.bind('<Key-s>', self.start)
 
         # threshold selector
         self.threshold_selector = Scale(self.root, label="Split threshold:", font=('Arial', 12), from_=10, to=20, resolution=0.25, digits=4, orient=HORIZONTAL, length=190, width=45)
@@ -60,7 +43,7 @@ class Interface(object):
 
         # button selector
         self.has_started = False
-        self.pause = True
+        # self.pause = True
         self.main_switch_text = StringVar()
         self.main_switch_text.set("Start")
         self.main_switch = Button(self.root, height=90, width=190, font=('Arial', 40), textvariable=self.main_switch_text, command=self.start)
@@ -75,15 +58,12 @@ class Interface(object):
         self.root.after(1, self.run)
         self.root.mainloop()
 
-    def pause(self, event):
-        self.pause = not self.pause
-        print(self.pause)
+    # def pause(self, event):
+    #     self.pause = not self.pause
+    #     print(self.pause)
 
     def run(self):
         self.time += 1
-        if not self.has_started:
-            self.lh, self.lw, self.rh, self.rw = int(self.matrix_l_h_selector.get()), int(self.matrix_l_w_selector.get()), int(self.matrix_r_h_selector.get()), int(self.matrix_r_w_selector.get())
-            self.update_target()
         img = cap(self.hwnd)
         circles = detect(img)
         self.tracker.update(circles)
@@ -94,18 +74,11 @@ class Interface(object):
         if not self.has_started:
             self.main_switch_text.set("Started")
             time.sleep(0.5)
-            self.tracker.start()
             self.has_started = True
-            print("Setting true")
-
-    def update_target(self, ratio=0.4):
-        assert 0 < ratio < 0.5
-        h = crop_bottom - crop_top
-        w = crop_right - crop_left
-        x, y = np.meshgrid(np.arange(0.5, self.lw, 1) * w * ratio / self.lw, np.arange(0.5, self.lh, 1) * h / self.lh)
-        self.left_target = np.concatenate([x.reshape(-1, 1), y.reshape(-1, 1)], axis=1)
-        x, y = np.meshgrid(np.arange(0.5, self.rw, 1) * w * ratio / self.rw, np.arange(0.5, self.rh, 1) * h / self.rh)
-        self.right_target = np.concatenate([x.reshape(-1, 1) + w * (1-ratio), y.reshape(-1, 1)], axis=1)
+        else:
+            self.main_switch_text.set("Start")
+            time.sleep(0.5)
+            self.has_started = False
 
     def quitcallback(self):
         self.root.destroy()
@@ -113,10 +86,6 @@ class Interface(object):
     @property
     def threshold(self):
         return self.threshold_selector.get() * 359 / 180.0
-
-    @property
-    def matrix_shape(self):
-        return self.lh, self.lw, self.rh, self.rw
 
 
 if __name__ == "__main__":

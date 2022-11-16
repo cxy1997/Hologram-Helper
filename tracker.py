@@ -5,95 +5,76 @@ from constants import *
 
 
 class Tracker(object):
-    def __init__(self, master, intersect=1.0, vanish=100):
+    def __init__(self, master, intersect=1.0, vanish=30):
         self.master = master
         self.left, self.top, self.right, self.bot = win32gui.GetWindowRect(self.master.hwnd)
         self.intersect = intersect
         self.vanish = vanish
         self.obj_id = 0
+        self.target_large = np.array([(self.right - self.left) * 0.9, (self.bot - self.top) * 0.9])
+        self.target_small = np.array([(self.right - self.left) * 0.9, (self.bot - self.top) * 0.1])
 
     def update(self, new_objs):
-        if not self.master.has_started:
-            if new_objs is None:
-                return
+        if hasattr(self, "freshness"):
+            self.freshness = self.freshness + 1
+
+        if new_objs is not None:
             if hasattr(self, "xy"):
-                self.freshness = self.freshness + 1
-                dist = np.linalg.norm(self.xy.reshape((-1, 1, 2)) - new_objs[:, :2].reshape((1, -1, 2)), axis=2)
-                added = []
-                for i in range(new_objs.shape[0]):
-                    j = np.argmin(dist[:, i])
-                    if dist[j, i] < self.intersect * (self.r[j] + new_objs[i, 2]):
-                        self.xy[j, :] = new_objs[i, :2]
-                        self.r[j] = new_objs[i, 2]
-                        self.freshness[j] = 0
-                    else:
-                        added.append(i)
+                if self.xy.shape[0] > 0:
+                    dist = np.linalg.norm(self.xy.reshape((-1, 1, 2)) - new_objs[:, :2].reshape((1, -1, 2)), axis=2)
+                    added = []
+                    for i in range(new_objs.shape[0]):
+                        j = np.argmin(dist[:, i])
+                        if dist[j, i] < self.intersect * (self.r[j] + new_objs[i, 2]):
+                            self.xy[j, :] = new_objs[i, :2]
+                            self.r[j] = new_objs[i, 2]
+                            self.freshness[j] = 0
+                        else:
+                            added.append(i)
+                else:
+                    added = np.arange(new_objs.shape[0])
 
                 added = new_objs[added, :]
-                print(f"New Detection: {added.shape[0]} circles")
 
                 self.xy = np.concatenate([self.xy, added[:, :2]], axis=0)
                 self.r = np.concatenate([self.r, added[:, 2]], axis=0)
                 self.freshness = np.concatenate([self.freshness, np.zeros_like(added[:, 2]).astype(np.uint8)], axis=0)
-                # self.clicked = np.concatenate([self.clicked, np.zeros_like(added[:, 2]).astype(np.uint8)], axis=0)
-                # self.click_all()
 
-                mask = self.freshness < self.vanish
-                self.xy = self.xy[mask]
-                self.r = self.r[mask]
-                self.freshness = self.freshness[mask]
-                # self.clicked = self.clicked[mask]
+                print(f"New Detection: {added.shape[0]} circles")
             else:
                 print(f"First Detection: {new_objs.shape[0]} circles")
                 self.xy = new_objs[:, :2]
                 self.r = new_objs[:, 2]
                 self.freshness = np.zeros_like(new_objs[:, 2]).astype(np.uint8)
-                # self.clicked = np.zeros_like(new_objs[:, 2]).astype(np.uint8)
-                # self.click_all()
 
-            order = np.argsort(self.r)
-            lh, lw, rh, rw = self.matrix_shape
-            self.left_points, self.right_points = [], []
-            for i in range(lh*lw):
-                if i < len(order) and self.r[order[i]] < self.master.threshold:
-                    self.left_points.append(order[i])
-                else:
-                    break
+        if hasattr(self, "freshness"):
+            self.freshness = self.freshness + 1
+            mask = self.freshness < self.vanish
+            self.xy = self.xy[mask]
+            self.r = self.r[mask]
+            self.freshness = self.freshness[mask]
+            print(f"Now has {self.xy.shape[0]} tracked circles")
 
-            for i in range(1, rh*rw+1):
-                if i <= len(order) and self.r[order[-i]] >= self.master.threshold:
-                    self.right_points.append(order[-i])
-                else:
-                    break
-        else:
-            if self.master.time % self.master.drag_interval == 0:
-                self.drag()
+        if self.master.has_started and self.master.time % self.master.drag_interval == 0:
+            self.drag()
 
     def drag(self, attract=10, repel=10, step=15):
-        self.left_force = np.zeros((len(self.left_points), 2))
-        for i, j in enumerate(self.left_points):
-            force = (self.master.left_target[i] - self.xy[j]) * attract
-            for k in range(self.xy.shape[0]):
-                if k != j:
-                    force += repel / (np.linalg.norm(self.xy[k] - self.xy[j]) ** 2) * (self.xy[j] - self.xy[k])
-            force = force / np.linalg.norm(force) * step
-            self.left_force[i] = force
-            self.drag_point(j, force)
-            self.xy[j] += force
-
-        self.right_force = np.zeros((len(self.right_points), 2))
-        for i, j in enumerate(self.right_points):
-            force = (self.master.right_target[i] - self.xy[j]) * attract
-            for k in range(self.xy.shape[0]):
-                if k != j:
-                    force += repel / (np.linalg.norm(self.xy[k] - self.xy[j]) ** 2) * (self.xy[j] - self.xy[k])
-            force = force / np.linalg.norm(force) * step
-            self.right_force[i] = force
-            self.drag_point(j, force)
-            self.xy[j] += force
+        for i in range(self.xy.shape[0]):
+            if self.xy[i][0] < (self.right - self.left) * 0.7 and 0.3 < self.xy[i][1] / (self.bot - self.top) < 0.7:
+                if self.r[i] < self.threshold:
+                    target = self.target_small
+                else:
+                    target = self.target_large
+                force = (target - self.xy[i]) * attract
+                for j in range(self.xy.shape[0]):
+                    if i != j:
+                        force += repel / (np.linalg.norm(self.xy[j] - self.xy[i]) ** 2) * (self.xy[i] - self.xy[j])
+                force = force / np.linalg.norm(force) * step
+                print(f"Dragging [{self.xy[i][0]:0.2f}, {self.xy[i][1]:0.2f}] with force [{force[0]:0.2f}, {force[1]:0.2f}]")
+                self.drag_point(i, force)
 
     def drag_point(self, i, force):
-        if self.master.pause:
+        if not self.master.has_started:
             return
         x0, y0 = win32api.GetCursorPos()
         win32api.SetCursorPos([int(self.xy[i, 0] + self.left + crop_left), int(self.xy[i, 1] + self.top + crop_top)])
@@ -103,32 +84,29 @@ class Tracker(object):
         win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
         win32api.SetCursorPos([x0, y0])
         self.master.root.focus_set()
+        self.xy[i] += force
 
-    def start(self):
-        if hasattr(self, "xy"):
-            for i in self.left_points + self.right_points:
-                self.double_click(i)
+    # def start(self):
+    #     if hasattr(self, "xy"):
+    #         for i in self.left_points + self.right_points:
+    #             self.double_click(i)
 
     def click(self):
         win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP | win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
 
-    def double_click(self, i):
-        # if self.clicked[i] == 1:
-        #     return
-        print(f"Double click on [{self.xy[i, 0], self.xy[i, 1]}]")
-        x0, y0 = win32api.GetCursorPos()
-        win32api.SetCursorPos([int(self.xy[i, 0] + self.left + crop_left), int(self.xy[i, 1] + self.top + crop_top)])
-        self.click()
-        self.click()
-        # self.clicked[i] = 1
-        win32api.SetCursorPos([x0, y0])
-        self.master.root.focus_set()
+    # def double_click(self, i):
+    #     # if self.clicked[i] == 1:
+    #     #     return
+    #     print(f"Double click on [{self.xy[i, 0], self.xy[i, 1]}]")
+    #     x0, y0 = win32api.GetCursorPos()
+    #     win32api.SetCursorPos([int(self.xy[i, 0] + self.left + crop_left), int(self.xy[i, 1] + self.top + crop_top)])
+    #     self.click()
+    #     self.click()
+    #     # self.clicked[i] = 1
+    #     win32api.SetCursorPos([x0, y0])
+    #     self.master.root.focus_set()
 
     @property
     def threshold(self):
         return self.master.threshold
-    
-    @property
-    def matrix_shape(self):
-        return self.master.matrix_shape
     
