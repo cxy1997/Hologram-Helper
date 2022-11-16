@@ -61,27 +61,28 @@ class Tracker(object):
     def drag(self, attract=10, repel=10, step=15):
         for i in range(self.xy.shape[0]):
             if self.xy[i][0] < (self.right - self.left) * 0.7 and 0.3 < self.xy[i][1] / (self.bot - self.top) < 0.7:
-                if self.r[i] < self.threshold:
-                    target = self.target_small
-                else:
-                    target = self.target_large
-                force = (target - self.xy[i]) * attract
-                for j in range(self.xy.shape[0]):
-                    if i != j:
-                        force += repel / (np.linalg.norm(self.xy[j] - self.xy[i]) ** 2) * (self.xy[i] - self.xy[j])
-                force = force / np.linalg.norm(force) * step
-                print(f"Dragging [{self.xy[i][0]:0.2f}, {self.xy[i][1]:0.2f}] with force [{force[0]:0.2f}, {force[1]:0.2f}]")
+                # if self.r[i] < self.threshold:
+                #     target = self.target_small
+                # else:
+                #     target = self.target_large
+                # force = (target - self.xy[i]) * attract
+                # for j in range(self.xy.shape[0]):
+                #     if i != j:
+                #         force += repel / (np.linalg.norm(self.xy[j] - self.xy[i]) ** 2) * (self.xy[i] - self.xy[j])
+                # force = force / np.linalg.norm(force) * step
+                # print(f"Dragging [{self.xy[i][0]:0.2f}, {self.xy[i][1]:0.2f}] with force [{force[0]:0.2f}, {force[1]:0.2f}]")
+                print(f"Dragging [{self.xy[i][0]:0.2f}, {self.xy[i][1]:0.2f}]")
                 self.drag_point(i, force)
 
-    def drag_point(self, i, force):
+    def drag_point(self, i, force=None):
         if not self.master.has_started:
             return
         x0, y0 = win32api.GetCursorPos()
         win32api.SetCursorPos([int(self.xy[i, 0] + self.left + crop_left), int(self.xy[i, 1] + self.top + crop_top)])
         self.click()
-        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
-        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN | win32con.MOUSEEVENTF_MOVE, int(force[0]), int(force[1]), 0, 0)
-        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
+        # win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
+        # win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN | win32con.MOUSEEVENTF_MOVE, int(force[0]), int(force[1]), 0, 0)
+        # win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
         win32api.SetCursorPos([x0, y0])
         self.master.root.focus_set()
         self.xy[i] += force

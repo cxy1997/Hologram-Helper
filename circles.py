@@ -17,7 +17,7 @@ from constants import *
 
 
 parser = argparse.ArgumentParser("Circle Clicker")
-parser.add_argument("--window", type=str, default="hot.vi", help="window name")
+parser.add_argument("--window", type=str, default="tk", help="window name")
 parser.add_argument("--interval", type=int, default=10, help="drag interval")
 args = parser.parse_args()
 
@@ -33,7 +33,7 @@ class Interface(object):
         self.root.protocol('WM_DELETE_WINDOW', self.quitcallback)
         self.root.title("Auto Circle Clicker")
         self.root.geometry("200x180")
-        self.root.iconbitmap("senpai.ico")
+        self.root.iconbitmap("paimon.ico")
         self.root.bind('<Key-s>', self.start)
 
         # threshold selector
